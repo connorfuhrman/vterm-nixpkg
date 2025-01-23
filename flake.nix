@@ -8,7 +8,6 @@
   };
 
   outputs = { self, nixpkgs, systems, flake-utils, ... }:
-    # Use flake-utils to generate outputs for each supported system
     flake-utils.lib.eachSystem ["aarch64-darwin" "x86_64-darwin"] (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
@@ -18,7 +17,6 @@
           sha256 = "09156f43dd2128bd347cbeebe50d9a571d32c64e0cf18d211197946aff7226e0";
         };
         
-        # Define the package
         libvterm = pkgs.stdenv.mkDerivation {
           pname = "libvterm";
           version = "0.3.3";
@@ -27,15 +25,14 @@
 
           nativeBuildInputs = [ pkgs.glibtool ];
 
-          # We'll modify the build phase to handle macOS-specific flags
           buildPhase = ''
             make -j
           '';
           
           installPhase = ''
             make install PREFIX=$out
-          '' + (if pkgs.stdenv.isDarwin then "install_name_tool -id $out/lib/libvterm.0.dylib $out/lib/libvterm.dylib"
-                 else "" );
+            install_name_tool -id $out/lib/libvterm.0.dylib $out/lib/libvterm.dylib  # <-- Darwin specific
+          '' ;
 
           meta = with pkgs.lib; {
             description = "C99 library which implements a VT220 or xterm terminal emulator";
@@ -79,7 +76,6 @@
           default = libvterm;
         };
 
-        # For nix develop
         devShells.default = pkgs.mkShell {
           inputsFrom = [ libvterm ];
           packages = with pkgs; [
@@ -87,14 +83,13 @@
             gcc
           ];
 
-          # export PKG_CONFIG_PATH=${libvterm}/lib/pkgconfig
+
           shellHook = ''
             ${pkgs.coreutils}/bin/cat ${libvtermCheckFile} > libvterm-test.c
             ${pkgs.gnutar}/bin/tar -xzf ${libvtermSrc}
           '';
         };
 
-        # Add checks
         checks.default = libvtermCheck;
       });
 }
