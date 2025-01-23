@@ -7,7 +7,7 @@
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, systems, flake-utils, ... }:
+  outputs = { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachSystem ["aarch64-darwin" "x86_64-darwin"] (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
